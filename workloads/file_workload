@@ -1,0 +1,2 @@
+workload=com.yahoo.ycsb.workloads.FileWorkload
+tracefilename=workloads/file_workload.trace
