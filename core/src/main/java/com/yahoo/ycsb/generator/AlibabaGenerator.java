@@ -104,7 +104,7 @@ public class AlibabaGenerator extends Generator<AlibabaGenerator.AlibabaSession>
     private String rpctype;
     private String dm;
     private String um;
-    private Long objId;
+    private String objId;
     private Operation op;
 
     /**
@@ -118,7 +118,7 @@ public class AlibabaGenerator extends Generator<AlibabaGenerator.AlibabaSession>
     }
 
     public AlibabaRequest(Long timestamp, String rpcid, String rpctype,
-        String dm, String um, Operation op, Long objId) {
+        String dm, String um, Operation op, String objId) {
       this.timestamp = timestamp;
       this.rpcid = rpcid;
       this.rpctype = rpctype;
@@ -152,7 +152,7 @@ public class AlibabaGenerator extends Generator<AlibabaGenerator.AlibabaSession>
       return op;
     }
 
-    public Long getObjId() {
+    public String getObjId() {
       return objId;
     }
 
@@ -165,12 +165,12 @@ public class AlibabaGenerator extends Generator<AlibabaGenerator.AlibabaSession>
       return (op == Operation.WRITE);
     }
 
-    public boolean toStateless() {
+    public boolean isStateless() {
       return (op == null);
     }
 
-    public boolean toStateful() {
-      return !toStateless();
+    public boolean isStateful() {
+      return !isStateless();
     }
 
     @Override
