@@ -104,6 +104,7 @@ public class AlibabaGenerator extends Generator<AlibabaGenerator.AlibabaSession>
     private String rpctype;
     private String dm;
     private String um;
+    @SerializedName("obj_id")
     private String objId;
     private Operation op;
 
