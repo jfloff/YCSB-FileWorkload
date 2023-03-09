@@ -21,6 +21,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import com.opencsv.*;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Arrays;
 import com.google.gson.Gson;
 import com.google.gson.annotations.*;
@@ -41,8 +42,11 @@ public class AlibabaGenerator extends Generator<AlibabaGenerator.AlibabaSession>
       this.id = csvRow[0];
       this.ts = Long.parseLong(csvRow[1]);
       // parse the array of traces
-      Gson gson = new Gson();
-      this.traces = Arrays.asList(gson.fromJson(csvRow[2], AlibabaTrace[].class));
+      this.traces = Arrays.asList(new Gson().fromJson(csvRow[2], AlibabaTrace[].class));
+      // fill the connections after loading the file
+      for (AlibabaTrace trace : this.traces) {
+        trace.init();
+      }
     }
 
     public String getId() {
@@ -98,20 +102,28 @@ public class AlibabaGenerator extends Generator<AlibabaGenerator.AlibabaSession>
    */
   public static class AlibabaTrace {
     private String traceid;
+    private AlibabaRequest rootRequest;
     private List<AlibabaRequest> requests;
 
-    /**
-    *
-    * @param traceid
-    * @param requests
-    */
-    public AlibabaTrace(String traceid, List<AlibabaRequest> requests) {
-      this.traceid = traceid;
-      this.requests = requests;
+    public void init() {
+      // fill the traceid in every request
+      for (AlibabaRequest request : requests) {
+        request.setTraceid(this.traceid);
+
+        // set root request
+        if (request.isRoot()){
+          this.rootRequest = request;
+        }
+      }
+
     }
 
     public String getTraceid() {
       return traceid;
+    }
+
+    public AlibabaRequest getRootRequest() {
+      return rootRequest;
     }
 
     public List<AlibabaRequest> getRequests() {
@@ -215,6 +227,10 @@ public class AlibabaGenerator extends Generator<AlibabaGenerator.AlibabaSession>
       this.traceid = t;
     }
     // helpers
+    public boolean isRoot() {
+      return this.rpcid.equals("0");
+    }
+
     public boolean isRead() {
       return (op == Operation.READ);
     }
