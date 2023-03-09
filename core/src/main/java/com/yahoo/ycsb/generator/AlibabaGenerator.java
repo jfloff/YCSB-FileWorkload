@@ -23,7 +23,7 @@ import com.opencsv.*;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
-import com.google.gson.Gson;
+import com.google.gson.*;
 import com.google.gson.annotations.*;
 import com.yahoo.ycsb.Utils;
 
@@ -43,7 +43,9 @@ public class AlibabaGenerator extends Generator<AlibabaGenerator.AlibabaSession>
       this.id = csvRow[0];
       this.ts = Long.parseLong(csvRow[1]);
       // parse the array of traces
-      this.traces = Arrays.asList(new Gson().fromJson(csvRow[2], AlibabaTrace[].class));
+      Gson gson = new GsonBuilder()
+          .create();
+      this.traces = Arrays.asList(gson.fromJson(csvRow[2], AlibabaTrace[].class));
       // fill the connections after loading the file
       for (AlibabaTrace trace : this.traces) {
         trace.init();
@@ -189,9 +191,7 @@ public class AlibabaGenerator extends Generator<AlibabaGenerator.AlibabaSession>
     private String traceid;
     private Long timestamp;
     private String rpcid;
-    private String rpctype;
     private String dm;
-    private String um;
     @SerializedName("obj_id")
     private String objId;
     private Operation op;
@@ -215,16 +215,8 @@ public class AlibabaGenerator extends Generator<AlibabaGenerator.AlibabaSession>
       return rpcid;
     }
 
-    public String getRpctype() {
-      return rpctype;
-    }
-
     public String getDm() {
       return dm;
-    }
-
-    public String getUm() {
-      return um;
     }
 
     public Operation getOp() {
@@ -275,8 +267,8 @@ public class AlibabaGenerator extends Generator<AlibabaGenerator.AlibabaSession>
 
     @Override
     public String toString() {
-      return "AlibabaRequest [traceid=" + traceid + ", timestamp=" + timestamp + ", rpcid=" + rpcid + ", rpctype="
-          + rpctype + ", dm=" + dm + ", um=" + um + ", objId=" + objId + ", op=" + op + "]";
+      return "AlibabaRequest [traceid=" + traceid + ", timestamp=" + timestamp + ", rpcid=" + rpcid +
+          ", dm=" + dm + ", objId=" + objId + ", op=" + op + "]";
     }
 
     @Override
