@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import com.google.gson.Gson;
 import com.google.gson.annotations.*;
+import com.yahoo.ycsb.Utils;
 
 /**
  * A generator, whose sequence is the lines of a file.
@@ -116,6 +117,20 @@ public class AlibabaGenerator extends Generator<AlibabaGenerator.AlibabaSession>
         }
       }
 
+      // fill the graph operations
+      for (AlibabaRequest request : requests) {
+        for (AlibabaRequest n : requests) {
+          // skip same request
+          if (n == request) {
+            continue;
+          }
+
+          // compare the rpcid prefix with the whole request rpcid
+          if (Utils.rpartition(n.getRpcid(), '.')[0].equals(request.getRpcid())) {
+            request.addDependency(n);
+          }
+        }
+      }
     }
 
     public String getTraceid() {
@@ -180,6 +195,7 @@ public class AlibabaGenerator extends Generator<AlibabaGenerator.AlibabaSession>
     @SerializedName("obj_id")
     private String objId;
     private Operation op;
+    private List<AlibabaRequest> dependencies = new ArrayList<>();
 
     /**
      * Represents datastore operation over the object.
@@ -226,6 +242,11 @@ public class AlibabaGenerator extends Generator<AlibabaGenerator.AlibabaSession>
     public void setTraceid(String t) {
       this.traceid = t;
     }
+
+    public List<AlibabaRequest> getDependencies() {
+      return dependencies;
+    }
+
     // helpers
     public boolean isRoot() {
       return this.rpcid.equals("0");
@@ -245,6 +266,11 @@ public class AlibabaGenerator extends Generator<AlibabaGenerator.AlibabaSession>
 
     public boolean isStateful() {
       return !isStateless();
+    }
+
+    // graph
+    public void addDependency(AlibabaRequest r){
+      this.dependencies.add(r);
     }
 
     @Override
