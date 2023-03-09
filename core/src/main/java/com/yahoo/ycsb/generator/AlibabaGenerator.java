@@ -61,6 +61,36 @@ public class AlibabaGenerator extends Generator<AlibabaGenerator.AlibabaSession>
     public String toString() {
       return "AlibabaSession [id=" + id + ", ts=" + ts + ", traces=" + traces + "]";
     }
+
+    @Override
+    public int hashCode() {
+      final int prime = 31;
+      int result = 1;
+      result = prime * result + ((id == null) ? 0 : id.hashCode());
+      return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      if (this == obj){
+        return true;
+      }
+      if (obj == null){
+        return false;
+      }
+      if (getClass() != obj.getClass()){
+        return false;
+      }
+      AlibabaSession other = (AlibabaSession) obj;
+      if (id == null) {
+        if (other.id != null){
+          return false;
+        }
+      } else if (!id.equals(other.id)){
+        return false;
+      }
+      return true;
+    }
   }
 
   /**
@@ -93,12 +123,43 @@ public class AlibabaGenerator extends Generator<AlibabaGenerator.AlibabaSession>
       // return "AlibabaTrace [traceid=" + traceid + "]";
       return "AlibabaTrace [traceid=" + traceid + ", requests=" + requests + "]";
     }
+
+    @Override
+    public int hashCode() {
+      final int prime = 31;
+      int result = 1;
+      result = prime * result + ((traceid == null) ? 0 : traceid.hashCode());
+      return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      if (this == obj){
+        return true;
+      }
+      if (obj == null){
+        return false;
+      }
+      if (getClass() != obj.getClass()){
+        return false;
+      }
+      AlibabaTrace other = (AlibabaTrace) obj;
+      if (traceid == null) {
+        if (other.traceid != null){
+          return false;
+        }
+      } else if (!traceid.equals(other.traceid)){
+        return false;
+      }
+      return true;
+    }
   }
 
   /**
    * Represents an Alibaba Request entry.
    */
   public static class AlibabaRequest {
+    private String traceid;
     private Long timestamp;
     private String rpcid;
     private String rpctype;
@@ -116,17 +177,6 @@ public class AlibabaGenerator extends Generator<AlibabaGenerator.AlibabaSession>
       READ,
       @SerializedName("w")
       WRITE
-    }
-
-    public AlibabaRequest(Long timestamp, String rpcid, String rpctype,
-        String dm, String um, Operation op, String objId) {
-      this.timestamp = timestamp;
-      this.rpcid = rpcid;
-      this.rpctype = rpctype;
-      this.dm = dm;
-      this.um = um;
-      this.op = op;
-      this.objId = objId;
     }
 
     public Long getTimestamp() {
@@ -157,6 +207,13 @@ public class AlibabaGenerator extends Generator<AlibabaGenerator.AlibabaSession>
       return objId;
     }
 
+    public String getTraceid() {
+      return traceid;
+    }
+
+    public void setTraceid(String t) {
+      this.traceid = t;
+    }
     // helpers
     public boolean isRead() {
       return (op == Operation.READ);
@@ -176,8 +233,46 @@ public class AlibabaGenerator extends Generator<AlibabaGenerator.AlibabaSession>
 
     @Override
     public String toString() {
-      return "AlibabaRequest [timestamp=" + timestamp + ", rpcid=" + rpcid + ", rpctype=" + rpctype + ", dm=" + dm
-          + ", um=" + um + ", op=" + op + ", objId=" + objId + "]";
+      return "AlibabaRequest [traceid=" + traceid + ", timestamp=" + timestamp + ", rpcid=" + rpcid + ", rpctype="
+          + rpctype + ", dm=" + dm + ", um=" + um + ", objId=" + objId + ", op=" + op + "]";
+    }
+
+    @Override
+    public int hashCode() {
+      final int prime = 31;
+      int result = 1;
+      result = prime * result + ((traceid == null) ? 0 : traceid.hashCode());
+      result = prime * result + ((rpcid == null) ? 0 : rpcid.hashCode());
+      return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      if (this == obj){
+        return true;
+      }
+      if (obj == null){
+        return false;
+      }
+      if (getClass() != obj.getClass()){
+        return false;
+      }
+      AlibabaRequest other = (AlibabaRequest) obj;
+      if (traceid == null) {
+        if (other.traceid != null){
+          return false;
+        }
+      } else if (!traceid.equals(other.traceid)){
+        return false;
+      }
+      if (rpcid == null) {
+        if (other.rpcid != null){
+          return false;
+        }
+      } else if (!rpcid.equals(other.rpcid)){
+        return false;
+      }
+      return true;
     }
   }
 
