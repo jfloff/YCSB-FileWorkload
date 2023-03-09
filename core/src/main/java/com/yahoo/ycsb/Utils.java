@@ -229,4 +229,23 @@ public final class Utils {
     }
     return array;
   }
+
+  /**
+   * Searches sep or pattern (regexp) in the string from the end of the string,
+   * and returns the part before it, the match, and the part after it.
+   * If it is not found, returns two empty strings and str.
+   * @param s The string to split
+   * @param c The character to split
+   * @return first and last part
+   */
+  public static String[] rpartition(final String s, final Character c) {
+    int i = s.lastIndexOf(c);
+    String[] a;
+    if (i < 0) {
+      a = new String[] {s, ""};
+    } else {
+      a = new String[] {s.substring(0, i), s.substring(i)};
+    }
+    return a;
+  }
 }
