@@ -21,10 +21,16 @@ import com.yahoo.ycsb.*;
 import com.yahoo.ycsb.generator.*;
 import com.yahoo.ycsb.generator.UniformLongGenerator;
 import com.yahoo.ycsb.measurements.Measurements;
+import com.yahoo.ycsb.generator.AlibabaGenerator.AlibabaRequest;
 import com.yahoo.ycsb.generator.AlibabaGenerator.AlibabaSession;
+import com.yahoo.ycsb.generator.AlibabaGenerator.AlibabaTrace;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.Future;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 
 /**
  * Loads a file with a set of commands for clients to run, doing simple CRUD operations.
@@ -326,33 +332,77 @@ public class AlibabaWorkload extends Workload {
    */
   @Override
   public boolean doTransaction(DB db, Object threadstate) {
-    AlibabaSession nextLine = tracefile.nextValue();
+    AlibabaSession nextSession = tracefile.nextValue();
 
     // we reached the end of the trace
-    System.out.println("NEXT LINE---1: " + nextLine);
-    if(nextLine == null) {
+    if(nextSession == null) {
       return false;
     }
 
-    // String[] fields = nextLine.split(",", 3);
-    // String operation = fields[0];
-    // String key = fields[1];
-    // if(operation == null || key == null) {
-    //   return false;
-    // }
-
-    // switch (operation) {
-    // case "READ":
-    //   doTransactionRead(db, key);
-    //   break;
-    // case "INSERT":
-    //   doTransactionInsert(db, key);
-    //   break;
-    // default:
-    //   doTransactionReadModifyWrite(db, key);
-    // }
+    for (AlibabaTrace trace : nextSession.getTraces()) {
+      traverseRequests(db, trace.getRootRequest());
+    }
 
     return true;
+  }
+
+  private void traverseRequests(DB db, AlibabaRequest request){
+    if (request.isStateful()){
+      // AlibabaRequest [
+      //   timestamp=1937,
+      //   rpcid=0.1.1.2.1.9,
+      //   dm=d3a0dbd99cef0ff255b05ad66d6c56af5ed7b6b507baafa096b22e8b0e8eed08,
+      //   op=READ,
+      //   objId=420906802748
+      // ]
+
+      String operation = request.getOp().name();
+      String key = request.getObjId();
+      switch (operation) {
+      case "READ":
+        doTransactionRead(db, key);
+        break;
+      case "WRITE":
+        doTransactionInsert(db, key);
+        break;
+      default:
+        break;
+      }
+    }
+
+    try {
+      List<Future<Void>> futures = new ArrayList<>();
+      for (AlibabaRequest dep : request.getDependencies()) {
+        Future<Void> f = new AsyncTraverseRequest().call(db, dep);
+        futures.add(f);
+        f.get(); // <-- REMOVE LATER -- PROBLEMS WITH CONCURRENT JEDIS CONNECTIONS
+      }
+      // wait for all dependencies
+      for (Future<Void> f : futures) {
+        f.get();
+      }
+    } catch (java.lang.InterruptedException e) {
+      throw new RuntimeException(e);
+    } catch (java.util.concurrent.ExecutionException e) {
+      throw new RuntimeException(e);
+    }
+
+    // only return main future when its dependencies also finish
+    return;
+  }
+
+  /**
+   * Execute database operation in a thread.
+   */
+  public class AsyncTraverseRequest {
+    private ExecutorService executor = Executors.newSingleThreadExecutor();
+
+    public Future<Void> call(DB db, AlibabaRequest dep) {
+      return executor.submit(() -> {
+          traverseRequests(db, dep);
+          return null;
+        });
+    }
   }
 
   /**
