@@ -13,7 +13,7 @@
 workload=com.yahoo.ycsb.workloads.AlibabaWorkload
 
 # The file path to the trace to load
-tracefilename=workloads/ycsber.sample.csv
+tracefilename=workloads/alibaba_workload.csv
 
 # The number of fields in a record
 fieldcount=1
