@@ -40,12 +40,14 @@ public class AlibabaGenerator extends Generator<AlibabaGenerator.AlibabaSession>
     private List<AlibabaTrace> traces;
 
     public AlibabaSession(String[] csvRow) {
-      this.id = csvRow[0];
-      this.ts = Long.parseLong(csvRow[1]);
+      // 0 is clientId which should be the same for the whole file
+      System.err.println(csvRow[1]);
+      this.id = csvRow[1];
+      this.ts = Long.parseLong(csvRow[2]);
       // parse the array of traces
       Gson gson = new GsonBuilder()
           .create();
-      this.traces = Arrays.asList(gson.fromJson(csvRow[2], AlibabaTrace[].class));
+      this.traces = Arrays.asList(gson.fromJson(csvRow[3], AlibabaTrace[].class));
       // fill the connections after loading the file
       for (AlibabaTrace trace : this.traces) {
         trace.init();

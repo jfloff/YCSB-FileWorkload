@@ -13,6 +13,11 @@
 workload=com.yahoo.ycsb.workloads.AlibabaWorkload
 
 # The file path to the trace to load
+# 4 columns in order:
+#   - client_id: id of client
+#   - session_id: id of session
+#   - root_session_timestamp: timestamp of start of trace
+#   - trace: all traces within a session
 tracefilename=workloads/alibaba_workload.csv
 
 # The number of fields in a record
