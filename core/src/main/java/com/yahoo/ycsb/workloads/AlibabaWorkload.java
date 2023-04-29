@@ -70,7 +70,15 @@ public class AlibabaWorkload extends Workload {
    */
   public static final String TRACE_FILENAME_PROPERTY_DEFAULT = "tracefile.trace";
 
-  private String traceFilename;
+  /**
+   * The number of threads in branching thread pool.
+   */
+  public static final String BRANCHING_THREAD_POOL_SIZE_PROPERTY = "branchingthreadpoolsize";
+
+  /**
+   * Default branching thread pool size.
+   */
+  public static final String BRANCHING_THREAD_POOL_SIZE_DEFAULT = "1";
 
   /**
    * The name of the property for the number of fields in a record.
@@ -181,6 +189,7 @@ public class AlibabaWorkload extends Workload {
   public static final String INSERTION_RETRY_INTERVAL = "core_workload_insertion_retry_interval";
   public static final String INSERTION_RETRY_INTERVAL_DEFAULT = "3";
 
+  private String traceFilename;
   protected AlibabaGenerator tracefile;
   protected NumberGenerator fieldchooser;
   protected long fieldcount;
@@ -227,6 +236,9 @@ public class AlibabaWorkload extends Workload {
 
     traceFilename = p.getProperty(TRACE_FILENAME_PROPERTY, TRACE_FILENAME_PROPERTY_DEFAULT);
     tracefile = new AlibabaGenerator(traceFilename);
+
+    branchingThreadPoolSize =
+        Integer.parseInt(p.getProperty(BRANCHING_THREAD_POOL_SIZE_PROPERTY, BRANCHING_THREAD_POOL_SIZE_DEFAULT));
 
     fieldcount =
         Long.parseLong(p.getProperty(FIELD_COUNT_PROPERTY, FIELD_COUNT_PROPERTY_DEFAULT));

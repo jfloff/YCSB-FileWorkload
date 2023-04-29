@@ -20,6 +20,9 @@ workload=com.yahoo.ycsb.workloads.AlibabaWorkload
 #   - trace: all traces within a session
 tracefilename=workloads/alibaba_workload.csv
 
+# size of branching thread pool
+branchingthreadpoolsize=1
+
 # The number of fields in a record
 fieldcount=1
 
