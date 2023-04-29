@@ -41,7 +41,6 @@ public class AlibabaGenerator extends Generator<AlibabaGenerator.AlibabaSession>
 
     public AlibabaSession(String[] csvRow) {
       // 0 is clientId which should be the same for the whole file
-      System.err.println(csvRow[1]);
       this.id = csvRow[1];
       this.ts = Long.parseLong(csvRow[2]);
       // parse the array of traces
