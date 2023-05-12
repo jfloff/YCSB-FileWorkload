@@ -348,12 +348,27 @@ public class AlibabaWorkload extends Workload {
     }
 
     // writes
+    List<Future<Void>> futures = new ArrayList<>();
     for (AlibabaTrace trace : nextSession.getTraces()) {
       for (AlibabaRequest request : trace.getRequests()) {
         if (request.isRead()) {
-          doTransactionInsert(db, request.getObjId());
+          Callable<Void> worker = new AsyncTransaction(db,
+              AlibabaRequest.Operation.WRITE.name(), request.getObjId());
+          Future<Void> f = branchingExecutor.submit(worker);
+          futures.add(f);
         }
       }
+    }
+
+    // wait for all dependencies from this trace
+    try {
+      for (Future<Void> future : futures) {
+        future.get();
+      }
+    } catch (java.lang.InterruptedException e) {
+      throw new RuntimeException(e);
+    } catch (java.util.concurrent.ExecutionException e) {
+      throw new RuntimeException(e);
     }
 
     return true;
