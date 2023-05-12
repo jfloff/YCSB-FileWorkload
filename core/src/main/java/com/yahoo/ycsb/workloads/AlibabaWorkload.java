@@ -333,6 +333,22 @@ public class AlibabaWorkload extends Workload {
    */
   @Override
   public boolean doInsert(DB db, Object threadstate) {
+    AlibabaSession nextSession = tracefile.nextValue();
+
+    // we reached the end of the trace
+    if(nextSession == null) {
+      return false;
+    }
+
+    // writes
+    for (AlibabaTrace trace : nextSession.getTraces()) {
+      for (AlibabaRequest request : trace.getRequests()) {
+        if (request.isRead()) {
+          doTransactionInsert(db, request.getObjId());
+        }
+      }
+    }
+
     return true;
   }
 
