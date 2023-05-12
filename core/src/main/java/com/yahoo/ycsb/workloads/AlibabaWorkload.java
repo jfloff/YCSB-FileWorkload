@@ -27,6 +27,7 @@ import com.yahoo.ycsb.generator.AlibabaGenerator.AlibabaTrace;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -191,12 +192,16 @@ public class AlibabaWorkload extends Workload {
 
   private String traceFilename;
   protected AlibabaGenerator tracefile;
+  private int branchingThreadPoolSize;
   protected NumberGenerator fieldchooser;
   protected long fieldcount;
   protected int insertionRetryLimit;
   protected int insertionRetryInterval;
 
   private Measurements measurements = Measurements.getMeasurements();
+
+  // Thread pool for branching
+  private ExecutorService branchingExecutor;
 
   protected static NumberGenerator getFieldLengthGenerator(Properties p) throws WorkloadException {
     NumberGenerator fieldlengthgenerator;
@@ -239,6 +244,8 @@ public class AlibabaWorkload extends Workload {
 
     branchingThreadPoolSize =
         Integer.parseInt(p.getProperty(BRANCHING_THREAD_POOL_SIZE_PROPERTY, BRANCHING_THREAD_POOL_SIZE_DEFAULT));
+
+    branchingExecutor = Executors.newFixedThreadPool(branchingThreadPoolSize);
 
     fieldcount =
         Long.parseLong(p.getProperty(FIELD_COUNT_PROPERTY, FIELD_COUNT_PROPERTY_DEFAULT));
@@ -368,14 +375,55 @@ public class AlibabaWorkload extends Workload {
     }
 
     for (AlibabaTrace trace : nextSession.getTraces()) {
-      traverseRequests(db, trace.getRootRequest());
+      // According to javadoc this threadpool uses a BlockingQueue which keeps the order
+      // hence we can queue jobs per each branch
+      List<Future<Void>> futures = new ArrayList<>();
+      traverseRequests(futures, db, trace.getRootRequest());
+
+      // wait for all dependencies from this trace
+      try {
+        for (Future<Void> future : futures) {
+          future.get();
+        }
+      } catch (java.lang.InterruptedException e) {
+        throw new RuntimeException(e);
+      } catch (java.util.concurrent.ExecutionException e) {
+        throw new RuntimeException(e);
+      }
     }
 
     return true;
   }
 
-  private void traverseRequests(DB db, AlibabaRequest request){
-    if (request.isStateful()){
+  private void traverseRequests(List<Future<Void>> futures, DB db, AlibabaRequest request){
+    // first goes to all the dependencies recursively up until the end of the request
+    for (AlibabaRequest dep : request.getDependencies()) {
+      traverseRequests(futures, db, dep);
+    }
+    // then after recursion we queue our task if stateful
+    if (request.isStateful()) {
+      Callable<Void> worker = new AsyncTransaction(db, request);
+      Future<Void> f = branchingExecutor.submit(worker);
+      futures.add(f);
+    }
+    return;
+  }
+
+  /**
+   * Execute database operation in a thread.
+   */
+  public class AsyncTransaction implements Callable<Void> {
+
+    private final AlibabaRequest request;
+    private final DB db;
+
+    public AsyncTransaction(DB db, AlibabaRequest request){
+      this.request = request;
+      this.db = db;
+    }
+
+    @Override
+    public Void call() {
       // AlibabaRequest [
       //   timestamp=1937,
       //   rpcid=0.1.1.2.1.9,
@@ -396,40 +444,8 @@ public class AlibabaWorkload extends Workload {
       default:
         break;
       }
-    }
 
-    try {
-      List<Future<Void>> futures = new ArrayList<>();
-      for (AlibabaRequest dep : request.getDependencies()) {
-        Future<Void> f = new AsyncTraverseRequest().call(db, dep);
-        futures.add(f);
-        f.get(); // <-- REMOVE LATER -- PROBLEMS WITH CONCURRENT JEDIS CONNECTIONS
-      }
-      // wait for all dependencies
-      for (Future<Void> f : futures) {
-        f.get();
-      }
-    } catch (java.lang.InterruptedException e) {
-      throw new RuntimeException(e);
-    } catch (java.util.concurrent.ExecutionException e) {
-      throw new RuntimeException(e);
-    }
-
-    // only return main future when its dependencies also finish
-    return;
-  }
-
-  /**
-   * Execute database operation in a thread.
-   */
-  public class AsyncTraverseRequest {
-    private ExecutorService executor = Executors.newSingleThreadExecutor();
-
-    public Future<Void> call(DB db, AlibabaRequest dep) {
-      return executor.submit(() -> {
-          traverseRequests(db, dep);
-          return null;
-        });
+      return null;
     }
   }
 
