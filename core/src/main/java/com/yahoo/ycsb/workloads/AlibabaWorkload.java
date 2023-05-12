@@ -402,7 +402,14 @@ public class AlibabaWorkload extends Workload {
     }
     // then after recursion we queue our task if stateful
     if (request.isStateful()) {
-      Callable<Void> worker = new AsyncTransaction(db, request);
+      // AlibabaRequest [
+      //   timestamp=1937,
+      //   rpcid=0.1.1.2.1.9,
+      //   dm=d3a0dbd99cef0ff255b05ad66d6c56af5ed7b6b507baafa096b22e8b0e8eed08,
+      //   op=READ,
+      //   objId=420906802748
+      // ]
+      Callable<Void> worker = new AsyncTransaction(db, request.getOp().name(), request.getObjId());
       Future<Void> f = branchingExecutor.submit(worker);
       futures.add(f);
     }
@@ -414,32 +421,24 @@ public class AlibabaWorkload extends Workload {
    */
   public class AsyncTransaction implements Callable<Void> {
 
-    private final AlibabaRequest request;
     private final DB db;
+    private final String operation;
+    private final String key;
 
-    public AsyncTransaction(DB db, AlibabaRequest request){
-      this.request = request;
+    public AsyncTransaction(DB db, String operation, String key){
       this.db = db;
+      this.operation = operation;
+      this.key = key;
     }
 
     @Override
     public Void call() {
-      // AlibabaRequest [
-      //   timestamp=1937,
-      //   rpcid=0.1.1.2.1.9,
-      //   dm=d3a0dbd99cef0ff255b05ad66d6c56af5ed7b6b507baafa096b22e8b0e8eed08,
-      //   op=READ,
-      //   objId=420906802748
-      // ]
-
-      String operation = request.getOp().name();
-      String key = request.getObjId();
-      switch (operation) {
+      switch (this.operation) {
       case "READ":
-        doTransactionRead(db, key);
+        doTransactionRead(this.db, this.key);
         break;
       case "WRITE":
-        doTransactionInsert(db, key);
+        doTransactionInsert(this.db, this.key);
         break;
       default:
         break;
