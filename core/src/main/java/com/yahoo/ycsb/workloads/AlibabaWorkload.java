@@ -253,7 +253,7 @@ public class AlibabaWorkload extends Workload {
     for (int i = 0; i < fieldcount; i++) {
       fieldnames.add("field" + i);
     }
-    fieldlengthgenerator = CoreWorkload.getFieldLengthGenerator(p);
+    fieldlengthgenerator = getFieldLengthGenerator(p);
 
     readallfields = Boolean.parseBoolean(
         p.getProperty(READ_ALL_FIELDS_PROPERTY, READ_ALL_FIELDS_PROPERTY_DEFAULT));
